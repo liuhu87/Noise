@@ -4,14 +4,20 @@ runlist=$2
 des_dir=$3
 nrun=$4
 run_first=$5
+isipm0=$6
+isipm1=$7
 #nlsf=20
+if [[ -z $binname ]];then
+   read -n1 -p "use <source lsf.sh binname runlist eos_dir nrun run_first isipm0 isipm1>,  Press any key to continue..."
+   read -n1 -p "use <source lsf.sh binname runlist eos_dir nrun run_first isipm0 isipm1>,  Press any key to continue..."
+fi
 if [[ -z $nrun ]]; then
    nrun=`cat $runlist | wc -l`
    run_first=0
 else
-   if [[ -z $run_first ]]; then
-      read -n1 -p "use <source lsf.sh runlist eos_dir nrun run_first>,  Press any key to continue..."
-      read -n1 -p "use <source lsf.sh runlist eos_dir nrun run_first>,  Press any key to continue..."
+   if [[ $nrun -lt 0 ]]; then
+      nrun=`cat $runlist | wc -l`
+      run_first=0
    fi
 fi
 #step=$((nrun/nlsf))
@@ -21,6 +27,10 @@ if [ $step -eq 0 ]; then
 fi
 if [ $step -eq 0 ]; then
    step=1
+fi
+
+if [ ! -d /eos/user/c/chenqh/$des_dir/s${isipm0}-${isipm1} ];then
+   mkdir /eos/user/c/chenqh/$des_dir/s${isipm0}-${isipm1}
 fi
 
 queue="ams1nd"
@@ -38,7 +48,7 @@ do
      cd lsf
      RUN=$i
 
-     if [[ -f /eos/user/h/hliu/$des_dir/${RUN}.root ]];then
+     if [[ -f /eos/user/h/hliu/$des_dir/s${isipm0}-${isipm1}/${RUN}.root ]];then
         cd ..
         continue
      fi
@@ -60,7 +70,7 @@ do
      echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $RUN.$name0
      echo $'\n' >> $RUN.$name0
      echo "#execute the monitor program" >> $RUN.$name0
-     echo "time /afs/ihep.ac.cn/users/h/hliu/Documents/Analysis/Noise/$binname $runlist /eos/user/h/hliu/$des_dir/${RUN}.root -1 $i $runlast" >> $RUN.$name0
+     echo "time /afs/ihep.ac.cn/users/c/chenqh/x/WFCTA/Noise/$binname $runlist /eos/user/c/chenqh/$des_dir/s${isipm0}-${isipm1}/${RUN}.root -1 $i $runlast -1 $isipm0 $isipm1" >> $RUN.$name0
      echo $'\n' >> $RUN.$name0
 
      echo "ls -ltrh" >> $RUN.$name0
@@ -82,7 +92,7 @@ do
      #   njobs=`hep_q -p virtual -u hliu | wc -l`
      #done
 
-     hep_sub -p virtual -g lhaaso -dir /eos/user/h/hliu/jobout -o /eos/user/h/hliu/jobout/$RUN.out -e /eos/user/h/hliu/jobout/$RUN.err $RUN.$name0
+     hep_sub -p virtual -g lhaaso -dir /eos/user/c/chenqh/jobout -o /eos/user/c/chenqh/jobout/$RUN.out -e /eos/user/c/chenqh/jobout/$RUN.err $RUN.$name0
      #source $RUN.$name0
      #echo "Processing $i : $RUN.$name0 ..."
      #ssh -o 'StrictHostKeyChecking=no' huliu@$hostname sh /afs/cern.ch/work/h/huliu/Documents/charge/lsf/$RUN.$name0 &
