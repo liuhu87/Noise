@@ -82,6 +82,7 @@ do
      #echo "fi" >> clean.sh
 
      chmod a+x $RUN.$name0
+     mv $RUN.$name0 job.sh.${jobindex}
 
      #njobs=`hep_q -p virtual -u hliu | wc -l`
      #sleep_time=120
@@ -92,7 +93,7 @@ do
      #   njobs=`hep_q -p virtual -u hliu | wc -l`
      #done
 
-     hep_sub -p virtual -g lhaaso -dir /eos/user/c/chenqh/jobout -o /eos/user/c/chenqh/jobout/$RUN.out -e /eos/user/c/chenqh/jobout/$RUN.err $RUN.$name0
+     #hep_sub -p virtual -g lhaaso -dir /eos/user/c/chenqh/jobout -o /eos/user/c/chenqh/jobout/$RUN.out -e /eos/user/c/chenqh/jobout/$RUN.err $RUN.$name0
      #source $RUN.$name0
      #echo "Processing $i : $RUN.$name0 ..."
      #ssh -o 'StrictHostKeyChecking=no' huliu@$hostname sh /afs/cern.ch/work/h/huliu/Documents/charge/lsf/$RUN.$name0 &
@@ -114,3 +115,7 @@ done
 #cd ~/eos/ams/user/h/huliu/DST/$des_dir
 #hadd -f plot.root plot_*.root
 #cd ~/Documents/plot
+
+cd lsf
+hep_sub -p virtual -g lhaaso -dir /eos/user/c/chenqh/jobout -o /eos/user/c/chenqh/jobout/%{ProcId}.out -e /eos/user/c/chenqh/jobout/%{ProcId}.err job.sh.%{ProcId} -n ${jobindex}
+cd ..
