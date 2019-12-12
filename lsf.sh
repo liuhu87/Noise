@@ -36,6 +36,7 @@ fi
 queue="ams1nd"
 jobindex=0
 name0="sh"
+lsf_dir="lsf2"
 for (( i=$run_first; i<nrun; i=i+step ))
 do
    runlast=$((i+step-1))
@@ -45,7 +46,7 @@ do
 
    #hostname=`cat /afs/cern.ch/work/h/huliu/Documents/test/bash/serverlist.txt | head -$((jobindex+1)) | tail -1`
 
-     cd lsf
+     cd ${lsf_dir}
      RUN=$i
 
      if [[ -f /eos/user/h/hliu/$des_dir/s${isipm0}-${isipm1}/${RUN}.root ]];then
@@ -116,6 +117,6 @@ done
 #hadd -f plot.root plot_*.root
 #cd ~/Documents/plot
 
-cd lsf
+cd ${lsf_dir}
 hep_sub -p virtual -g lhaaso -dir /eos/user/c/chenqh/jobout -o /eos/user/c/chenqh/jobout/%{ProcId}.out -e /eos/user/c/chenqh/jobout/%{ProcId}.err job.sh.%{ProcId} -n ${jobindex}
 cd ..
