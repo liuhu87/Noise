@@ -29,8 +29,15 @@ if [ $step -eq 0 ]; then
    step=1
 fi
 
-if [ ! -d /eos/user/c/chenqh/$des_dir/s${isipm0}-${isipm1} ];then
-   mkdir /eos/user/c/chenqh/$des_dir/s${isipm0}-${isipm1}
+userid=`id`
+userid=${userid%%)*}
+userid=${userid##*(}
+user0=${userid:0:1}
+#echo $userid"  "$user0
+#return 
+
+if [ ! -d /eos/user/${user0}/${userid}/$des_dir/s${isipm0}-${isipm1} ];then
+   mkdir /eos/user/${user0}/${userid}/$des_dir/s${isipm0}-${isipm1}
 fi
 
 queue="ams1nd"
@@ -49,7 +56,7 @@ do
      cd ${lsf_dir}
      RUN=$i
 
-     if [[ -f /eos/user/h/hliu/$des_dir/s${isipm0}-${isipm1}/${RUN}.root ]];then
+     if [[ -f /eos/user/${user0}/${userid}/$des_dir/s${isipm0}-${isipm1}/${RUN}.root ]];then
         cd ..
         continue
      fi
@@ -71,7 +78,7 @@ do
      echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH" >> $RUN.$name0
      echo $'\n' >> $RUN.$name0
      echo "#execute the monitor program" >> $RUN.$name0
-     echo "time /afs/ihep.ac.cn/users/c/chenqh/x/WFCTA/Noise/$binname $runlist /eos/user/c/chenqh/$des_dir/s${isipm0}-${isipm1}/${RUN}.root -1 $i $runlast -1 $isipm0 $isipm1" >> $RUN.$name0
+     echo "time /afs/ihep.ac.cn/users/${user0}/${userid}/x/WFCTA/Noise/$binname $runlist /eos/user/${user0}/${userid}/$des_dir/s${isipm0}-${isipm1}/${RUN}.root -1 $i $runlast -1 $isipm0 $isipm1" >> $RUN.$name0
      echo $'\n' >> $RUN.$name0
 
      echo "ls -ltrh" >> $RUN.$name0
@@ -85,13 +92,13 @@ do
      chmod a+x $RUN.$name0
      mv $RUN.$name0 job.sh.${jobindex}
 
-     #njobs=`hep_q -p virtual -u hliu | wc -l`
+     #njobs=`hep_q -p virtual -u ${userid} | wc -l`
      #sleep_time=120
      #while [ "$njobs" -gt 350 ]
      #do
      #   echo "there are $((njobs)) jobs,too many,sleep for $sleep_time seconds at `date`"
      #   sleep $sleep_time
-     #   njobs=`hep_q -p virtual -u hliu | wc -l`
+     #   njobs=`hep_q -p virtual -u ${userid} | wc -l`
      #done
 
      #hep_sub -p virtual -g lhaaso -dir /eos/user/c/chenqh/jobout -o /eos/user/c/chenqh/jobout/$RUN.out -e /eos/user/c/chenqh/jobout/$RUN.err $RUN.$name0
@@ -118,5 +125,5 @@ done
 #cd ~/Documents/plot
 
 cd ${lsf_dir}
-hep_sub -p virtual -g lhaaso -dir /eos/user/c/chenqh/jobout -o /eos/user/c/chenqh/jobout/%{ProcId}.out -e /eos/user/c/chenqh/jobout/%{ProcId}.err job.sh.%{ProcId} -n ${jobindex}
+hep_sub -p virtual -g lhaaso -dir /eos/user/${user0}/${userid}/jobout -o /eos/user/${user0}/${userid}/jobout/%{ProcId}.out -e /eos/user/${user0}/${userid}/jobout/%{ProcId}.err job.sh.%{ProcId} -n ${jobindex}
 cd ..
