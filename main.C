@@ -15,11 +15,12 @@ int main(int argc,char* argv[]){
 
    char* runlist=argv[1];
    char* outname=argv[2];
+   bool plottime=false;
    char firstline[300];
    char lastline[300];
-   int nline=CommonTools::GetFirstLastLine(Form("/afs/ihep.ac.cn/users/c/chenqh/x/WFCTA/Noise/%s",runlist),firstline,lastline);
-   int timefirst=CommonTools::GetTimeFromFileName(firstline,59,12)-600;
-   int timelast=CommonTools::GetTimeFromFileName(lastline,59,12)+600;
+   int nline=CommonTools::GetFirstLastLine(Form("~/Documents/Analysis/Noise/%s",runlist),firstline,lastline);
+   int timefirst=CommonTools::GetTimeFromFileName(firstline)-600;
+   int timelast=CommonTools::GetTimeFromFileName(lastline)+600;
    printf("firstline=%s\n",firstline);
    printf("lastline =%s\n",lastline);
    printf("nline=%d timefirst=%d timelast=%d\n",nline,timefirst,timelast);
@@ -55,6 +56,7 @@ int main(int argc,char* argv[]){
    for(int ii=0;ii<1024;ii++){
       hnoise[ii]=0;
       hnoise2[ii]=0;
+      if(!plottime) continue;
       if((isipm0>=0&&isipm0<=isipm1)&&(ii<isipm0||ii>isipm1)) continue;
       hnoise[ii]=new TH2F(Form("hnoise_sipm%d",ii),Form("SiPM%d;Time;Noise [pe]",ii),nxbin,xbins,nnsbin,nsbin);
       hnoise[ii]->GetXaxis()->SetTimeDisplay(1);
@@ -70,20 +72,25 @@ int main(int argc,char* argv[]){
    for(int ii=0;ii<1024;ii++){
       hbaseline[ii]=0;
       if((isipm0>=0&&isipm0<=isipm1)&&(ii<isipm0||ii>isipm1)) continue;
+      if(!plottime) continue;
       hbaseline[ii]=new TH2F(Form("hbaseline_sipm%d",ii),Form("SiPM%d;Time;High Gain BaseLine [pe]",ii),nxbin,xbins,nbsbin,bsbin);
       hbaseline[ii]->GetXaxis()->SetTimeDisplay(1);
       hbaseline[ii]->GetXaxis()->SetNdivisions(-203);
       hbaseline[ii]->GetXaxis()->SetTimeFormat("%Mm/%Hh/%d/%m%F1970-01-01 00:00:00s0");
    }
 
-   TH1F* hrawrate=new TH1F("hrawrate",";Time;Events",nxbin,xbins);
-   hrawrate->GetXaxis()->SetTimeDisplay(1);
-   hrawrate->GetXaxis()->SetNdivisions(-203);
-   hrawrate->GetXaxis()->SetTimeFormat("%Mm/%Hh/%d/%m%F1970-01-01 00:00:00s0");
-   TH1F* hselrate=new TH1F("hselrate",";Time;Events",nxbin,xbins);
-   hselrate->GetXaxis()->SetTimeDisplay(1);
-   hselrate->GetXaxis()->SetNdivisions(-203);
-   hselrate->GetXaxis()->SetTimeFormat("%Mm/%Hh/%d/%m%F1970-01-01 00:00:00s0");
+   TH1F* hrawrate=0;
+   TH1F* hselrate=0;
+   if(plottime){
+      hrawrate=new TH1F("hrawrate",";Time;Events",nxbin,xbins);
+      hrawrate->GetXaxis()->SetTimeDisplay(1);
+      hrawrate->GetXaxis()->SetNdivisions(-203);
+      hrawrate->GetXaxis()->SetTimeFormat("%Mm/%Hh/%d/%m%F1970-01-01 00:00:00s0");
+      hselrate=new TH1F("hselrate",";Time;Events",nxbin,xbins);
+      hselrate->GetXaxis()->SetTimeDisplay(1);
+      hselrate->GetXaxis()->SetNdivisions(-203);
+      hselrate->GetXaxis()->SetTimeFormat("%Mm/%Hh/%d/%m%F1970-01-01 00:00:00s0");
+   }
 
    WCamera::SetSiPMMAP();
    TH2F* mapnoise=new TH2F("mapnoise",";SiPM Index;Noise [pe]",1024,-0.5,1023.5,nnsbin,nsbin);
@@ -100,8 +107,12 @@ int main(int argc,char* argv[]){
       noise2_vs_baseline[ii]=new TH2F(Form("noise_winsum_vs_baseline_sipm%d",ii),Form("SiPM%d;High Gain BaseLine [pe];Noise [pe]",ii),nbsbin,bsbin,nnsbin,nsbin2);
    }
 
-   TH1F* hsingle=new TH1F(Form("single_thresh_sipm%d",0),";Time;Single Threshold [ADC]",nxbin,xbins);
-   TH1F* hrecord=new TH1F(Form("record_thresh_sipm%d",0),";Time;Record Threshold [ADC]",nxbin,xbins);
+   TH1F* hsingle=0;
+   TH1F* hrecord=0;
+   if(plottime){
+      hsingle=new TH1F(Form("single_thresh_sipm%d",0),";Time;Single Threshold [ADC]",nxbin,xbins);
+      hrecord=new TH1F(Form("record_thresh_sipm%d",0),";Time;Record Threshold [ADC]",nxbin,xbins);
+   }
 
    if(false){
       for(int ibin=1;ibin<=nxbin;ibin++){
@@ -119,22 +130,23 @@ int main(int argc,char* argv[]){
    int iline=0;
    char buff[500];
    ifstream fin;
-   fin.open(Form("/afs/ihep.ac.cn/users/c/chenqh/x/WFCTA/Noise/%s",runlist),std::ios::in);
+   fin.open(Form("~/Documents/Analysis/Noise/%s",runlist),std::ios::in);
    fin.getline(buff,500);
    iline++;
    while(fin.good()){
       char statusfile[500];
-      CommonTools::GetStatusFile(statusfile,buff);
-      if(last>=first&&first>=0){
-         if(iline-1>=first&&iline-1<=last){
+      if(CommonTools::GetStatusFile(statusfile,buff)){
+         if(last>=first&&first>=0){
+            if(iline-1>=first&&iline-1<=last){
+               statuschain.Add(statusfile);
+               printf("Status Tree Adding %d: %s\n",iline,statusfile);
+            }
+            else if(iline-1>last) break;
+         }
+         else{
             statuschain.Add(statusfile);
             printf("Status Tree Adding %d: %s\n",iline,statusfile);
          }
-         else if(iline-1>last) break;
-      }
-      else{
-         statuschain.Add(statusfile);
-         printf("Status Tree Adding %d: %s\n",iline,statusfile);
       }
       fin.getline(buff,500);
       iline++;
@@ -150,7 +162,7 @@ int main(int argc,char* argv[]){
    //return 1;
 
    LHChain chain;
-   chain.AddFromFile(Form("/afs/ihep.ac.cn/users/c/chenqh/x/WFCTA/Noise/%s",runlist),first,last);
+   chain.AddFromFile(Form("~/Documents/Analysis/Noise/%s",runlist),first,last);
    if(maxentry<0) maxentry=chain.GetEntries();
    for(int entry=0;entry<maxentry;entry++){
       if((entry%1000)==0) printf("Processing %d of %d entries\n",entry,maxentry);
@@ -166,6 +178,7 @@ int main(int argc,char* argv[]){
          double nbase=pev->BaseH.at(ii)/WFCTAMCEvent::fAmpHig;
          if(hbaseline[pev->iSiPM.at(ii)]) hbaseline[pev->iSiPM.at(ii)]->Fill(time,nbase);
          if(mapbaseline) mapbaseline->Fill(pev->iSiPM.at(ii),nbase);
+         //if(pev->iSiPM.at(ii)==0) printf("entry=%d time=%lf base={%lf,%lf}\n",entry,time,nbase,pev->BaseH.at(ii));
       }
       if(!pev->IsNoise(5,150,4,3.5)) continue;
 
@@ -181,13 +194,15 @@ int main(int argc,char* argv[]){
       if(!findstatus) continue;
       //printf("entry=%d time=%lf status_time=%ld findstatus=%d\n",entry,time,status_readback_Time,findstatus);
 
+      if(plottime){
       int itbin=hsingle->GetXaxis()->FindBin(status_readback_Time*1.);
       if(single_thresh[0]>hsingle->GetBinContent(itbin)) hsingle->SetBinContent(itbin,single_thresh[0]);
       if(record_thresh[0]>hrecord->GetBinContent(itbin)) hrecord->SetBinContent(itbin,record_thresh[0]);
+      }
 
       int size=pev->iSiPM.size();
       for(int ii=0;ii<size;ii++){
-         double nnoise=pev->GetContent(ii,0,3,true);
+         double nnoise=pev->GetContent(ii,0,11,true);
          double nnoise2=pev->winsum.at(ii)/WFCTAMCEvent::fAmpHig;
          double nbase=pev->BaseH.at(ii)/WFCTAMCEvent::fAmpHig;
          if(hnoise[pev->iSiPM.at(ii)]) hnoise[pev->iSiPM.at(ii)]->Fill(time,nnoise);
